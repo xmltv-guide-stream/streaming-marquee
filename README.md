@@ -4,6 +4,8 @@ A movie-theater style **"Now Playing"** screen for your media servers. It shows 
 poster art, who's watching, and the time each stream will finish — all rendered as an
 old-school (but good-looking) theater marquee.
 
+![Streaming Marquee now-playing screen](streaming-marquee.png)
+
 It supports three backends, and you can mix as many of each as you like:
 
 - **[Tautulli](https://tautulli.com)** — for Plex servers.
