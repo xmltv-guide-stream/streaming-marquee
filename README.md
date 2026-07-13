@@ -1,4 +1,4 @@
-# 🎬 Tautulli Marquee
+# 🎬 Streaming Marquee
 
 A movie-theater style **"Now Playing"** screen for your media servers. It shows the
 poster art, who's watching, and the time each stream will finish — all rendered as an
