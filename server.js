@@ -634,6 +634,67 @@ function publicInstances() {
 }
 
 // ---------------------------------------------------------------------------
+// Admin authentication (optional). If config.adminAuth is unset, the admin page
+// is open and simply offers to set a password. Once set, admin actions require
+// a login session. The password is stored salted+hashed, never in plain text.
+// ---------------------------------------------------------------------------
+
+const activeSessions = new Set(); // in-memory session tokens (cleared on restart)
+const SESSION_COOKIE = 'sm_session';
+
+function hasAdminPassword() {
+  return !!(config.adminAuth && config.adminAuth.hash && config.adminAuth.salt);
+}
+
+function setAdminPassword(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(pw, salt, 64).toString('hex');
+  config.adminAuth = { salt, hash };
+  saveConfig(config); // only adds adminAuth; all existing config is preserved
+}
+
+function verifyAdminPassword(pw) {
+  if (!hasAdminPassword()) return false;
+  const { salt, hash } = config.adminAuth;
+  const test = crypto.scryptSync(String(pw), salt, 64).toString('hex');
+  const a = Buffer.from(test, 'hex');
+  const b = Buffer.from(hash, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function parseCookies(req) {
+  const out = {};
+  const raw = req.headers.cookie;
+  if (!raw) return out;
+  for (const part of raw.split(';')) {
+    const i = part.indexOf('=');
+    if (i < 0) continue;
+    out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+  }
+  return out;
+}
+
+function newSession(res) {
+  const token = crypto.randomBytes(32).toString('hex');
+  activeSessions.add(token);
+  // 30-day cookie; HttpOnly so page scripts can't read it; Lax is fine for a LAN app.
+  res.setHeader('Set-Cookie', `${SESSION_COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=2592000`);
+}
+
+function clearSession(req, res) {
+  const token = parseCookies(req)[SESSION_COOKIE];
+  if (token) activeSessions.delete(token);
+  res.setHeader('Set-Cookie', `${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`);
+}
+
+// True if the request may perform admin actions.
+function isAuthed(req) {
+  if (!hasAdminPassword()) return true; // no protection configured yet
+  const token = parseCookies(req)[SESSION_COOKIE];
+  return !!token && activeSessions.has(token);
+}
+
+// ---------------------------------------------------------------------------
 // Image proxy: browser -> our server -> Tautulli (hides api key, avoids CORS
 // and mixed-content problems).
 // ---------------------------------------------------------------------------
@@ -731,6 +792,63 @@ async function handleImageProxy(req, res, urlObj) {
 async function handleApi(req, res, urlObj) {
   const p = urlObj.pathname;
 
+  // --- Auth routes (always reachable) ---
+  if (p === '/api/auth/login' && req.method === 'POST') {
+    const body = JSON.parse((await readBody(req)) || '{}');
+    if (verifyAdminPassword(body.password || '')) {
+      newSession(res);
+      return sendJson(res, 200, { ok: true });
+    }
+    return sendJson(res, 401, { ok: false, error: 'Incorrect password.' });
+  }
+
+  if (p === '/api/auth/logout' && req.method === 'POST') {
+    clearSession(req, res);
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (p === '/api/auth/set-password' && req.method === 'POST') {
+    const body = JSON.parse((await readBody(req)) || '{}');
+    const newPassword = (body.newPassword || '').trim();
+    if (newPassword.length < 4) {
+      return sendJson(res, 400, { ok: false, error: 'Password must be at least 4 characters.' });
+    }
+    // If a password already exists, changing it requires an active session or
+    // the current password.
+    if (hasAdminPassword() && !isAuthed(req) && !verifyAdminPassword(body.currentPassword || '')) {
+      return sendJson(res, 401, { ok: false, error: 'Current password is required.' });
+    }
+    setAdminPassword(newPassword);
+    newSession(res); // log in immediately after setting/changing
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (p === '/api/auth/disable-password' && req.method === 'POST') {
+    // Turning protection off. If a password is currently set, you must be logged
+    // in (or supply it) to remove it.
+    if (hasAdminPassword()) {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      if (!isAuthed(req) && !verifyAdminPassword(body.currentPassword || '')) {
+        return sendJson(res, 401, { ok: false, error: 'Log in first to disable the password.' });
+      }
+    }
+    delete config.adminAuth;
+    saveConfig(config);
+    activeSessions.clear();
+    clearSession(req, res);
+    return sendJson(res, 200, { ok: true });
+  }
+
+  // --- Gate sensitive admin endpoints behind the password (if one is set) ---
+  const isProtected =
+    (req.method === 'POST' && (p === '/api/instances' || p === '/api/test')) ||
+    (req.method === 'DELETE' && /^\/api\/instances\/[^/]+$/.test(p)) ||
+    (req.method === 'POST' && /^\/api\/instances\/[^/]+\/test$/.test(p)) ||
+    (req.method === 'GET' && p === '/api/debug');
+  if (isProtected && !isAuthed(req)) {
+    return sendJson(res, 401, { ok: false, error: 'Admin login required.' });
+  }
+
   if (p === '/api/nowplaying' && req.method === 'GET') {
     const data = await getAllNowPlaying();
     return sendJson(res, 200, data);
@@ -769,10 +887,14 @@ async function handleApi(req, res, urlObj) {
   }
 
   if (p === '/api/config' && req.method === 'GET') {
+    const authed = isAuthed(req);
     return sendJson(res, 200, {
       theme: config.theme,
       refreshSeconds: config.refreshSeconds,
-      instances: publicInstances()
+      authRequired: hasAdminPassword(),
+      authed,
+      // Only expose the instance list (hosts + masked keys) to an authed admin.
+      instances: authed ? publicInstances() : []
     });
   }
 

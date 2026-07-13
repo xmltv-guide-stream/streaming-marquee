@@ -84,6 +84,15 @@
     }
     .inline { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
     .hint { color: #7d8a9c; font-size: 0.82rem; margin-top: 6px; }
+
+    /* toggle switch */
+    .switch-row { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+    .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex: 0 0 auto; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; background: #3a4552; border-radius: 999px; transition: background 0.2s ease; }
+    .slider::before { content: ""; position: absolute; height: 20px; width: 20px; left: 3px; top: 3px; background: #e7edf5; border-radius: 50%; transition: transform 0.2s ease; }
+    .switch input:checked + .slider { background: #3f7ee0; }
+    .switch input:checked + .slider::before { transform: translateX(20px); }
   </style>
 </head>
 <body>
@@ -92,7 +101,20 @@
       <h1>🎬 Tautulli Marquee <span class="film">· Admin</span></h1>
       <a class="back" href="/">← Back to the marquee</a>
     </header>
-    <p class="lede">Add one row per backend — Tautulli (for Plex) or Jellystat (for Jellyfin). You can add as many as you like, mixing both; the marquee combines the now-playing activity from all of them.</p>
+    <p class="lede">Add one row per backend — Tautulli (for Plex), Jellystat (for Jellyfin), or Channels DVR (live TV). You can add as many as you like, mixing them; the marquee combines the now-playing activity from all of them.</p>
+
+    <!-- Login view (shown only when a password is set and you're not logged in) -->
+    <section class="card" id="loginView" style="display:none; max-width:420px; margin:30px auto;">
+      <h2>Admin login</h2>
+      <div class="field">
+        <label for="loginPw">Password</label>
+        <input type="password" id="loginPw" autocomplete="current-password" />
+      </div>
+      <div class="btns"><button class="primary" id="loginBtn">Log in</button></div>
+      <div class="msg" id="loginMsg"></div>
+    </section>
+
+    <div id="adminView">
 
     <section class="card">
       <h2>Add an instance</h2>
@@ -167,6 +189,31 @@
       </div>
       <div class="msg" id="displayMsg"></div>
     </section>
+
+    <section class="card" id="securityCard">
+      <h2>Security</h2>
+      <label class="switch-row">
+        <span class="switch">
+          <input type="checkbox" id="pwToggle" />
+          <span class="slider"></span>
+        </span>
+        <span>Require a password to open the admin page</span>
+      </label>
+
+      <div id="pwBox" style="margin-top:16px;">
+        <div class="field" style="max-width:360px;">
+          <label for="pwInput" id="pwLabel">Set password</label>
+          <input type="password" id="pwInput" autocomplete="new-password" placeholder="At least 4 characters" />
+        </div>
+        <div class="btns">
+          <button class="primary" id="savePwBtn">Save password</button>
+          <button class="danger" id="logoutBtn" style="display:none;">Log out</button>
+        </div>
+      </div>
+      <div class="msg" id="secMsg"></div>
+    </section>
+
+    </div><!-- /adminView -->
   </div>
 
   <script src="/admin.js"></script>

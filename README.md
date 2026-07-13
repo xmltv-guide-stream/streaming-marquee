@@ -144,14 +144,33 @@ It returns the raw `activity` strings, the `devices` list, the resolved `guideMa
 mapping in `parseChannelsActivity()` / `mergeGuideNow()` can be adjusted to your
 server's exact shape. (The instance id is shown in `config.json`.)
 
+## Admin password
+
+The admin page can be password protected (optional). The **Security** card has a
+**toggle** to require a password, plus a box to set or change it at any time:
+
+- **Enable:** type a password and click **Save** (or flip the toggle on, then Save).
+  You're logged in immediately and a login is required from then on.
+- **Change:** while logged in, just type a new password and click **Save** — no need
+  to re-enter the old one.
+- **Disable:** flip the toggle off (confirms first). The page becomes open again.
+- **Log out** ends your session without disabling the password.
+
+The password is stored **salted + hashed** (scrypt) in `config.json` under `adminAuth`
+— never in plain text. Sessions are cookie-based and reset when the server restarts
+(you'll just log in again). Forgot the password? Delete the `adminAuth` key from
+`config.json` and restart; the page reverts to open + "set password".
+
+Only the admin actions are gated. The public marquee (`/`), the now-playing feed, and
+poster images stay open so the display works without logging in.
+
 ## Notes on security
 
-Per your setup, the admin page is **open to anyone who can reach the server** — there
-is no login. Keep this bound to your trusted LAN / firewall it off from the public
-internet. API keys are stored in `config.json` in plain text (that's how Tautulli
-itself needs them) and are masked in the admin UI, but anyone with filesystem or
-network access to the box could read them. If you later want a password on the admin
-page, that's a small addition.
+API keys are stored in `config.json` (that's how Tautulli/Jellystat need them) and are
+masked in the admin UI, but anyone with filesystem access to the box could read them.
+Keep the server bound to your trusted LAN and firewalled off from the public internet.
+Channels DVR needs no key. Every config save first writes a timestamped backup into
+`.config-backups/` so an accidental change can be rolled back.
 
 ## Files
 

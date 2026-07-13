@@ -51,9 +51,26 @@ $('type').addEventListener('change', applyTypeUI);
 
 async function loadConfig() {
   const cfg = await (await fetch('/api/config', { cache: 'no-store' })).json();
+
+  // Gate the admin UI behind login when a password is set.
+  if (cfg.authRequired && !cfg.authed) {
+    $('loginView').style.display = '';
+    $('adminView').style.display = 'none';
+    return;
+  }
+  $('loginView').style.display = 'none';
+  $('adminView').style.display = '';
+
   $('theme').value = cfg.theme || 'marquee';
   $('refresh').value = cfg.refreshSeconds || 15;
   renderRows(cfg.instances || []);
+
+  // Security card: toggle reflects whether protection is on; the password box is
+  // always available to set or change it.
+  $('pwToggle').checked = !!cfg.authRequired;
+  $('pwLabel').textContent = cfg.authRequired ? 'Change password' : 'Set password';
+  $('pwInput').placeholder = cfg.authRequired ? 'Enter a new password' : 'At least 4 characters';
+  $('logoutBtn').style.display = (cfg.authRequired && cfg.authed) ? '' : 'none';
 }
 
 function renderRows(instances) {
@@ -162,6 +179,60 @@ $('saveDisplay').addEventListener('click', async () => {
   } catch (e) {
     setMsg($('displayMsg'), '✗ ' + e.message, 'err');
   }
+});
+
+// ---- auth ----------------------------------------------------------------
+
+async function postJson(url, body) {
+  const res = await fetch(url, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {})
+  });
+  let data = {};
+  try { data = await res.json(); } catch { /* ignore */ }
+  return { ok: res.ok && data.ok !== false, data };
+}
+
+async function doLogin() {
+  const { ok, data } = await postJson('/api/auth/login', { password: $('loginPw').value });
+  if (ok) { $('loginPw').value = ''; setMsg($('loginMsg'), '', ''); loadConfig(); }
+  else setMsg($('loginMsg'), '✗ ' + (data.error || 'Login failed'), 'err');
+}
+$('loginBtn').addEventListener('click', doLogin);
+$('loginPw').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+
+// Toggle enables/disables password protection.
+$('pwToggle').addEventListener('change', async () => {
+  if ($('pwToggle').checked) {
+    // Turning ON: prompt for a password (protection activates on Save).
+    setMsg($('secMsg'), 'Enter a password below and click Save to enable protection.', '');
+    $('pwInput').focus();
+  } else {
+    // Turning OFF: remove the password.
+    if (!confirm('Disable the admin password? The admin page will be open to anyone on your network.')) {
+      $('pwToggle').checked = true;
+      return;
+    }
+    const { ok, data } = await postJson('/api/auth/disable-password', {});
+    if (ok) { setMsg($('secMsg'), '✓ Password protection disabled.', 'ok'); loadConfig(); }
+    else { $('pwToggle').checked = true; setMsg($('secMsg'), '✗ ' + (data.error || 'Failed'), 'err'); }
+  }
+});
+
+// Save sets or changes the password (works whether or not one exists yet).
+async function savePassword() {
+  const pw = $('pwInput').value.trim();
+  if (pw.length < 4) return setMsg($('secMsg'), '✗ Password must be at least 4 characters.', 'err');
+  const { ok, data } = await postJson('/api/auth/set-password', { newPassword: pw });
+  if (ok) { $('pwInput').value = ''; setMsg($('secMsg'), '✓ Password saved. Admin login is now required.', 'ok'); loadConfig(); }
+  else setMsg($('secMsg'), '✗ ' + (data.error || 'Failed'), 'err');
+}
+$('savePwBtn').addEventListener('click', savePassword);
+$('pwInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') savePassword(); });
+
+$('logoutBtn').addEventListener('click', async () => {
+  await postJson('/api/auth/logout', {});
+  loadConfig();
 });
 
 applyTypeUI();
