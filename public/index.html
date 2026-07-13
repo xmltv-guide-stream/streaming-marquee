@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Now Playing — Tautulli Marquee</title>
+  <link rel="stylesheet" href="/themes.css" />
+</head>
+<body data-theme="marquee">
+  <div class="stage">
+    <header class="masthead">
+      <h1>Now Playing</h1>
+      <div class="sub" id="tagline">Tonight&rsquo;s Feature Presentations</div>
+    </header>
+
+    <main id="grid" class="grid"></main>
+
+    <div id="empty" class="empty" style="display:none;">
+      <div class="big">The house lights are up</div>
+      <div class="small">Nothing is playing right now</div>
+    </div>
+
+    <div id="errbar" class="errbar"></div>
+
+    <footer class="footer">
+      <span id="clock">&nbsp;</span>
+      <a href="/admin">Admin</a>
+    </footer>
+  </div>
+
+  <div class="themebar" id="themebar">
+    <button data-theme="marquee">Marquee</button>
+    <button data-theme="lobby">Lobby</button>
+    <button data-theme="neon">Neon</button>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

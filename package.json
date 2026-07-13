@@ -1,0 +1,14 @@
+{
+  "name": "tautulli-marquee",
+  "version": "1.0.0",
+  "description": "A movie-theater 'Now Playing' marquee for one or more Tautulli instances.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}

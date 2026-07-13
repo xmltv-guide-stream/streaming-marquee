@@ -1,0 +1,485 @@
+/* =========================================================================
+   Tautulli Marquee — theme stylesheet
+   Three themes, switched by a data-theme attribute on <body>:
+     marquee  -> 1930s Art-Deco theater marquee (bulb-lit border)
+     lobby    -> mid-century framed lobby-card poster wall
+     neon     -> 1950s neon drive-in signage
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Limelight&family=Monoton&family=Poiret+One&family=Bebas+Neue&family=Playfair+Display:wght@600;900&family=Oswald:wght@300;500;700&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --gap: 26px;
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'Oswald', sans-serif;
+  height: 100%;
+  /* The page itself does not scroll; the grid scrolls inside the frame so
+     nothing spills above/below the themed border. */
+  overflow: hidden;
+  transition: background 0.6s ease, color 0.6s ease;
+}
+
+/* ------------------------------------------------------------------ layout */
+
+.stage {
+  height: 100vh;
+  padding: clamp(16px, 3vw, 42px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.masthead {
+  text-align: center;
+  margin-bottom: clamp(14px, 3vh, 34px);
+  position: relative;
+}
+
+.masthead h1 {
+  font-size: clamp(2rem, 6vw, 5rem);
+  line-height: 1;
+  letter-spacing: 0.06em;
+}
+
+.masthead .sub {
+  margin-top: 10px;
+  font-size: clamp(0.8rem, 1.6vw, 1.15rem);
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--gap);
+  align-content: start;
+  align-items: start;   /* don't vertically stretch cards / squish posters */
+  flex: 1;
+  /* min-height:0 lets the grid shrink so its own scrollbar engages, keeping
+     scrolled content clipped to this box (which sits inside the frame). */
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 6px 4px 2px;   /* breathing room for the scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.25) transparent;
+}
+.grid::-webkit-scrollbar { width: 8px; }
+.grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 8px; }
+.grid::-webkit-scrollbar-track { background: transparent; }
+
+/* A single showing "card" */
+.card {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: rise 0.5s ease both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.poster {
+  position: relative;
+  aspect-ratio: 2 / 3;      /* classic tall movie-poster proportions */
+  flex: 0 0 auto;           /* never let the card compress the poster */
+  width: 100%;
+  background: #111 center/cover no-repeat;
+  overflow: hidden;
+}
+
+.poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.poster .noart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px;
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+/* Live TV tile (Channels DVR) — fills the poster area in place of artwork */
+.livetile {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255,255,255,0.10), transparent 60%),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0 10px, transparent 10px 20px),
+    #101010;
+}
+.livetile-glyph { font-size: 2.6rem; opacity: 0.85; }
+.livetile-channel {
+  font-size: 1.5rem;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.liveflag {
+  position: absolute;
+  top: 12px; left: 12px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  font-weight: 700;
+  background: #c0202a;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(192,32,42,0.6);
+  animation: livepulse 2s ease-in-out infinite;
+}
+@keyframes livepulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+/* progress bar sits at the bottom of the poster */
+.progress {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 6px;
+  background: rgba(0,0,0,0.5);
+}
+.progress > span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  transition: width 0.8s ease;
+}
+
+.pausedflag {
+  position: absolute;
+  top: 12px; left: 12px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.7);
+}
+
+.info { padding: 14px 16px 18px; }
+
+.title {
+  font-size: 1.35rem;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+.subtitle {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.meta {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+.meta .row { display: flex; justify-content: space-between; gap: 10px; }
+.meta .label { text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.68rem; opacity: 0.65; }
+.meta .value { text-align: right; }
+.meta .ends { font-weight: 700; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.instance-tag {
+  position: absolute;
+  top: 12px; right: 12px;
+  padding: 3px 9px;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.65);
+}
+
+/* Empty + error states */
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 18px;
+  opacity: 0.9;
+}
+.empty .big { font-size: clamp(1.6rem, 4vw, 3rem); letter-spacing: 0.12em; }
+.empty .small { letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.7; }
+
+.errbar {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+/* footer clock */
+.footer {
+  margin-top: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.footer a { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
+
+/* theme picker (shared) */
+.themebar {
+  position: fixed;
+  bottom: 16px; right: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 50;
+  background: rgba(0,0,0,0.35);
+  padding: 8px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+.themebar button {
+  border: 1px solid rgba(255,255,255,0.3);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.themebar button:hover { background: rgba(255,255,255,0.15); }
+.themebar button.active { background: #fff; color: #000; }
+
+/* =========================================================================
+   THEME 1 — MARQUEE (Art Deco)
+   ========================================================================= */
+body[data-theme="marquee"] {
+  background:
+    radial-gradient(circle at 50% -10%, #3a2233 0%, #1a0f1c 45%, #0c0710 100%);
+  color: #f6e7c9;
+}
+body[data-theme="marquee"] .stage {
+  border: 14px solid transparent;
+}
+/* the bulb-lit marquee frame */
+body[data-theme="marquee"] .stage::before {
+  content: "";
+  position: fixed;
+  inset: 10px;
+  border-radius: 10px;
+  pointer-events: none;
+  border: 3px solid #e8b34a;
+  box-shadow:
+    0 0 0 2px #7a4b12 inset,
+    0 0 22px rgba(232,179,74,0.35);
+}
+/* Round marquee bulbs, mounted as strips along all four edges (no clipping). */
+body[data-theme="marquee"] .stage::after {
+  content: "";
+  position: fixed;
+  inset: 6px;
+  border-radius: 12px;
+  pointer-events: none;
+  --bulb: radial-gradient(circle, #fff4d2 0 4px, #ffcf6b 5.5px, rgba(255,185,70,0.18) 8px, transparent 9px);
+  background-image: var(--bulb), var(--bulb), var(--bulb), var(--bulb);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  background-size: 32px 16px, 32px 16px, 16px 32px, 16px 32px;
+  filter: drop-shadow(0 0 6px rgba(255,195,80,0.85));
+  animation: bulbChase 1s steps(1) infinite;
+}
+/* Half-step shift + brightness swing = classic alternating chase. */
+@keyframes bulbChase {
+  0%, 49% {
+    background-position: 0 0, 0 100%, 0 0, 100% 0;
+    filter: drop-shadow(0 0 6px rgba(255,195,80,0.9)) brightness(1.12);
+  }
+  50%, 100% {
+    background-position: 16px 0, 16px 100%, 0 16px, 100% 16px;
+    filter: drop-shadow(0 0 4px rgba(255,195,80,0.5)) brightness(0.82);
+  }
+}
+body[data-theme="marquee"] .masthead h1 {
+  font-family: 'Limelight', 'Cinzel', serif;
+  color: #ffd876;
+  text-shadow: 0 0 14px rgba(255,197,80,0.5), 0 2px 0 #6b3d0c;
+}
+body[data-theme="marquee"] .masthead .sub { color: #e8b34a; }
+body[data-theme="marquee"] .card {
+  background: linear-gradient(180deg, #241627, #17101d);
+  border: 1px solid rgba(232,179,74,0.35);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.55);
+}
+body[data-theme="marquee"] .title { font-family: 'Cinzel', serif; color: #ffe1a3; }
+body[data-theme="marquee"] .progress > span { background: linear-gradient(90deg,#e8b34a,#ffd876); }
+body[data-theme="marquee"] .badge { background: rgba(232,179,74,0.18); color: #ffd876; border: 1px solid rgba(232,179,74,0.5); }
+body[data-theme="marquee"] .meta .ends { color: #ffd876; }
+body[data-theme="marquee"] .pausedflag { color: #ffd876; border: 1px solid rgba(232,179,74,0.5); }
+
+/* =========================================================================
+   THEME 2 — LOBBY (mid-century poster wall)
+   ========================================================================= */
+body[data-theme="lobby"] {
+  background-color: #2a2622;
+  background-image:
+    linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.35)),
+    repeating-linear-gradient(90deg, #3a332c 0 2px, #342e28 2px 40px);
+  color: #efe7d8;
+}
+body[data-theme="lobby"] .masthead h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  color: #f3ead6;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+body[data-theme="lobby"] .masthead .sub { color: #c9a36a; }
+body[data-theme="lobby"] .card {
+  background: #f6f0e3;
+  color: #241f19;
+  padding: 12px;
+  border-radius: 3px;
+  box-shadow: 0 16px 30px rgba(0,0,0,0.55), 0 2px 0 rgba(255,255,255,0.4) inset;
+  border: 1px solid #d8ccb2;
+}
+/* the "frame" around the poster */
+body[data-theme="lobby"] .poster {
+  border: 8px solid #efe7d5;
+  outline: 2px solid #b7a683;
+  border-radius: 2px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.4) inset;
+}
+body[data-theme="lobby"] .info { padding: 12px 4px 4px; }
+body[data-theme="lobby"] .title { font-family: 'Playfair Display', serif; font-weight: 900; color: #201b15; }
+body[data-theme="lobby"] .subtitle { color: #6a5c46; }
+body[data-theme="lobby"] .meta { color: #3a3126; }
+body[data-theme="lobby"] .meta .label { color: #8a795c; }
+body[data-theme="lobby"] .progress { background: rgba(0,0,0,0.15); }
+body[data-theme="lobby"] .progress > span { background: #b6472e; }
+body[data-theme="lobby"] .badge { background: #201b15; color: #f3ead6; }
+body[data-theme="lobby"] .instance-tag { background: rgba(32,27,21,0.8); }
+body[data-theme="lobby"] .meta .ends { color: #b6472e; }
+body[data-theme="lobby"] .footer { color: #d8ccb2; }
+
+/* subtle paper grain on the wall */
+body[data-theme="lobby"] .stage::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* =========================================================================
+   THEME 3 — NEON (drive-in)
+   ========================================================================= */
+body[data-theme="neon"] {
+  background: linear-gradient(180deg, #0b1e3a 0%, #241141 45%, #47143a 80%, #6b1b2e 100%);
+  color: #e9f6ff;
+}
+body[data-theme="neon"] .masthead h1 {
+  font-family: 'Monoton', cursive;
+  font-weight: 400;
+  color: #ff5cc8;
+  text-shadow:
+    0 0 6px #ff5cc8, 0 0 18px #ff5cc8, 0 0 40px #b3009e;
+  animation: flicker 4.5s infinite;
+}
+@keyframes flicker {
+  0%, 96%, 100% { opacity: 1; }
+  97% { opacity: 0.55; }
+  98% { opacity: 0.9; }
+  99% { opacity: 0.5; }
+}
+body[data-theme="neon"] .masthead .sub {
+  color: #58e5ff;
+  text-shadow: 0 0 8px #58e5ff;
+}
+body[data-theme="neon"] .card {
+  background: rgba(10,16,40,0.55);
+  border: 1px solid rgba(88,229,255,0.4);
+  border-radius: 10px;
+  box-shadow: 0 0 18px rgba(88,229,255,0.25), 0 12px 30px rgba(0,0,0,0.55);
+  backdrop-filter: blur(3px);
+}
+body[data-theme="neon"] .title {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.06em;
+  color: #fff;
+  text-shadow: 0 0 8px rgba(88,229,255,0.6);
+}
+body[data-theme="neon"] .subtitle { color: #9fd8ff; }
+body[data-theme="neon"] .progress { background: rgba(0,0,0,0.4); }
+body[data-theme="neon"] .progress > span {
+  background: linear-gradient(90deg,#58e5ff,#ff5cc8);
+  box-shadow: 0 0 10px #58e5ff;
+}
+body[data-theme="neon"] .badge {
+  background: transparent;
+  border: 1px solid #58e5ff;
+  color: #58e5ff;
+  box-shadow: 0 0 8px rgba(88,229,255,0.4);
+}
+body[data-theme="neon"] .meta .ends { color: #ff5cc8; text-shadow: 0 0 8px rgba(255,92,200,0.5); }
+body[data-theme="neon"] .instance-tag { background: rgba(11,30,58,0.75); color: #58e5ff; border: 1px solid rgba(88,229,255,0.4); }
+body[data-theme="neon"] .pausedflag { color: #ff5cc8; border: 1px solid #ff5cc8; }
+
+/* Per-theme accents for the live tile */
+body[data-theme="marquee"] .livetile-channel { color: #ffe1a3; font-family: 'Cinzel', serif; }
+body[data-theme="marquee"] .livetile { border-bottom: 1px solid rgba(232,179,74,0.3); }
+body[data-theme="lobby"] .livetile { background: #201b15; }
+body[data-theme="lobby"] .livetile-channel { color: #f3ead6; font-family: 'Playfair Display', serif; }
+body[data-theme="neon"] .livetile-channel { color: #fff; text-shadow: 0 0 10px rgba(88,229,255,0.7); font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.08em; }
+body[data-theme="neon"] .livetile { background:
+    radial-gradient(circle at 50% 35%, rgba(88,229,255,0.14), transparent 60%),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0 10px, transparent 10px 20px),
+    #0a1028; }
+
+/* responsiveness */
+@media (max-width: 640px) {
+  .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); --gap: 14px; }
+  .title { font-size: 1.05rem; }
+  .livetile-channel { font-size: 1.15rem; }
+}
