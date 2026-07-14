@@ -80,7 +80,9 @@ another device on your LAN at `http://<your-machine-ip>:<port>/`.
 > **Upgrading from a Tautulli-only version?** Your existing instances carry over
 > automatically. On first launch the app backfills a `type: "tautulli"` field on any
 > older entries, so nothing needs to be re-added.
-5. Optionally set the default theme and refresh interval under **Display settings**.
+5. Optionally set the default theme, **scroll direction** (vertical wraps into rows;
+   horizontal is a single row that scrolls sideways), and refresh interval under
+   **Display settings**.
 
 You can also switch themes on the fly using the buttons in the bottom-right of the
 marquee screen; the choice is saved as the new default.

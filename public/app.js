@@ -21,6 +21,10 @@ function applyTheme(theme) {
   }
 }
 
+function applyScroll(direction) {
+  grid.classList.toggle('horizontal', direction === 'horizontal');
+}
+
 themebar.addEventListener('click', (e) => {
   const btn = e.target.closest('button');
   if (!btn) return;
@@ -151,7 +155,7 @@ function render(data) {
     emptyEl.style.display = 'flex';
   } else {
     emptyEl.style.display = 'none';
-    grid.style.display = 'grid';
+    grid.style.display = '';   // revert to stylesheet (grid or flex per direction)
     grid.innerHTML = items.map(cardHtml).join('');
   }
 
@@ -198,6 +202,7 @@ async function init() {
     const cfg = await (await fetch('/api/config', { cache: 'no-store' })).json();
     if (cfg.theme) applyTheme(cfg.theme);
     if (cfg.refreshSeconds) refreshSeconds = cfg.refreshSeconds;
+    applyScroll(cfg.scrollDirection || 'vertical');
   } catch {
     applyTheme('marquee');
   }

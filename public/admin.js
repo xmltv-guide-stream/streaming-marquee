@@ -63,6 +63,7 @@ async function loadConfig() {
 
   $('theme').value = cfg.theme || 'marquee';
   $('refresh').value = cfg.refreshSeconds || 15;
+  $('scrollDir').value = cfg.scrollDirection || 'vertical';
   renderRows(cfg.instances || []);
 
   // Security card: toggle reflects whether protection is on; the password box is
@@ -170,10 +171,11 @@ $('addBtn').addEventListener('click', async () => {
 $('saveDisplay').addEventListener('click', async () => {
   const theme = $('theme').value;
   const refreshSeconds = parseInt($('refresh').value, 10) || 15;
+  const scrollDirection = $('scrollDir').value;
   try {
     await fetch('/api/theme', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ theme, refreshSeconds })
+      body: JSON.stringify({ theme, refreshSeconds, scrollDirection })
     });
     setMsg($('displayMsg'), '✓ Saved.', 'ok');
   } catch (e) {

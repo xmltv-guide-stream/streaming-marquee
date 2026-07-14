@@ -30,10 +30,11 @@ const CONFIG_PATH = path.join(ROOT, 'config.json');
 // ---------------------------------------------------------------------------
 
 const DEFAULT_CONFIG = {
-  port: null,            // chosen once, then persisted
-  theme: 'marquee',      // default theme for the display
-  refreshSeconds: 15,    // how often the browser polls for updates
-  instances: []          // [{ id, name, host, port, https, apiKey }]
+  port: null,               // chosen once, then persisted
+  theme: 'marquee',         // default theme for the display
+  refreshSeconds: 15,       // how often the browser polls for updates
+  scrollDirection: 'vertical', // 'vertical' | 'horizontal' poster overflow
+  instances: []             // [{ id, name, host, port, https, apiKey }]
 };
 
 function loadConfig() {
@@ -891,6 +892,7 @@ async function handleApi(req, res, urlObj) {
     return sendJson(res, 200, {
       theme: config.theme,
       refreshSeconds: config.refreshSeconds,
+      scrollDirection: config.scrollDirection || 'vertical',
       authRequired: hasAdminPassword(),
       authed,
       // Only expose the instance list (hosts + masked keys) to an authed admin.
@@ -908,7 +910,16 @@ async function handleApi(req, res, urlObj) {
       config.refreshSeconds = Math.round(body.refreshSeconds);
       saveConfig(config);
     }
-    return sendJson(res, 200, { ok: true, theme: config.theme, refreshSeconds: config.refreshSeconds });
+    if (body.scrollDirection === 'vertical' || body.scrollDirection === 'horizontal') {
+      config.scrollDirection = body.scrollDirection;
+      saveConfig(config);
+    }
+    return sendJson(res, 200, {
+      ok: true,
+      theme: config.theme,
+      refreshSeconds: config.refreshSeconds,
+      scrollDirection: config.scrollDirection
+    });
   }
 
   if (p === '/api/instances' && req.method === 'POST') {

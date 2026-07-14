@@ -75,9 +75,25 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.25) transparent;
 }
-.grid::-webkit-scrollbar { width: 8px; }
+.grid::-webkit-scrollbar { width: 8px; height: 8px; }
 .grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 8px; }
 .grid::-webkit-scrollbar-track { background: transparent; }
+
+/* Horizontal mode: one row of fixed-width poster cards that scrolls sideways.
+   Cards keep a fixed width so the poster stays a true 2:3 (its height is derived
+   from the width, exactly like vertical mode) and long titles wrap instead of
+   widening the card. */
+.grid.horizontal {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.grid.horizontal .card {
+  flex: 0 0 clamp(200px, 15vw, 280px);
+  width: clamp(200px, 15vw, 280px);
+}
 
 /* A single showing "card" */
 .card {
