@@ -1,5 +1,5 @@
 {
-  "name": "tautulli-marquee",
+  "name": "streaming-marquee",
   "version": "1.0.0",
   "description": "A movie-theater 'Now Playing' marquee for one or more Tautulli instances.",
   "main": "server.js",

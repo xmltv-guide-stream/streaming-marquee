@@ -51,7 +51,7 @@ startup:
 
 ```
 ==========================================================
-  🎬  Tautulli Marquee is now showing
+  🎬  Streaming Marquee is now showing
 ==========================================================
   Now Playing screen : http://localhost:53072/
   Admin backend      : http://localhost:53072/admin
@@ -93,18 +93,18 @@ Node services. A couple of common options:
 **pm2**
 ```bash
 npm install -g pm2
-pm2 start server.js --name tautulli-marquee
+pm2 start server.js --name streaming-marquee
 pm2 save
 ```
 
-**systemd** (Linux) — create `/etc/systemd/system/tautulli-marquee.service`:
+**systemd** (Linux) — create `/etc/systemd/system/streaming-marquee.service`:
 ```ini
 [Unit]
-Description=Tautulli Marquee
+Description=Streaming Marquee
 After=network.target
 
 [Service]
-WorkingDirectory=/path/to/tautulli-marquee
+WorkingDirectory=/path/to/streaming-marquee
 ExecStart=/usr/bin/node server.js
 Restart=always
 User=youruser
@@ -112,7 +112,7 @@ User=youruser
 [Install]
 WantedBy=multi-user.target
 ```
-Then `sudo systemctl enable --now tautulli-marquee`.
+Then `sudo systemctl enable --now streaming-marquee`.
 
 ## How it works
 
@@ -177,7 +177,7 @@ Channels DVR needs no key. Every config save first writes a timestamped backup i
 ## Files
 
 ```
-tautulli-marquee/
+streaming-marquee/
 ├── server.js            # the server (no dependencies)
 ├── package.json
 ├── config.json          # auto-generated; your instances + settings

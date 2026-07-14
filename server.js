@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * Tautulli Marquee
- * ----------------
+ * Streaming Marquee
+ * -----------------
  * A zero-dependency Node.js server that aggregates "now playing" activity from
  * one or more Tautulli instances and presents it as a good-looking, old-school
  * movie-theater "Now Playing" screen.
@@ -1036,14 +1036,14 @@ const server = http.createServer(async (req, res) => {
   server.listen(port, '0.0.0.0', () => {
     const line = '='.repeat(58);
     console.log('\n' + line);
-    console.log('  🎬  Tautulli Marquee is now showing');
+    console.log('  🎬  Streaming Marquee is now showing');
     console.log(line);
     console.log(`  Now Playing screen : http://localhost:${port}/`);
     console.log(`  Admin backend      : http://localhost:${port}/admin`);
     console.log(`  (also reachable on your LAN IP at the same port)`);
     console.log(line + '\n');
     if (config.instances.length === 0) {
-      console.log('  No Tautulli instances configured yet.');
+      console.log('  No streaming sources configured yet.');
       console.log('  Open the Admin page above to add your first one.\n');
     }
   });

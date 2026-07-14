@@ -1,6 +1,6 @@
 'use strict';
 
-/* Tautulli Marquee — front-end for the Now Playing screen */
+/* Streaming Marquee — front-end for the Now Playing screen */
 
 const grid = document.getElementById('grid');
 const emptyEl = document.getElementById('empty');
