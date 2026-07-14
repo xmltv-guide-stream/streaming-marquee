@@ -60,7 +60,11 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--gap);
   align-content: start;
-  align-items: start;   /* don't vertically stretch cards / squish posters */
+  /* Cards stretch to their row height so every implicit row gets a definite
+     height and rows never collapse/overlap. The poster keeps its shape via
+     flex:0 0 auto, so stretching only adds empty space below short cards. */
+  align-items: stretch;
+  grid-auto-rows: max-content;
   flex: 1;
   /* min-height:0 lets the grid shrink so its own scrollbar engages, keeping
      scrolled content clipped to this box (which sits inside the frame). */
