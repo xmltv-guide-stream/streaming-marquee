@@ -74,8 +74,9 @@ another device on your LAN at `http://<your-machine-ip>:<port>/`.
    - Tick **Use HTTPS** if the server is served over TLS (self-signed certs are
      accepted).
 3. Click **Test connection** to confirm, then **Add instance**.
-4. Repeat for as many instances as you like, mixing Tautulli and Jellystat freely —
-   the marquee merges the now-playing activity from all of them.
+4. Repeat for as many instances as you like, mixing Tautulli, Jellystat, and Channels
+   DVR freely — the marquee merges the now-playing activity from all of them. Each row
+   has **Rename** (change its display name), **Test**, and **Remove** buttons.
 
 > **Upgrading from a Tautulli-only version?** Your existing instances carry over
 > automatically. On first launch the app backfills a `type: "tautulli"` field on any
@@ -134,10 +135,19 @@ Then `sudo systemctl enable --now streaming-marquee`.
 ## Tuning Channels DVR parsing
 
 Channels DVR's activity strings and guide JSON aren't strictly documented, so the app
-parses them defensively (activity: anything containing "Watching"; guide: the current
-airing's title + image from `/devices/<id>/guide/now`). If a live stream shows up with
-an odd title, the wrong device, or a missing poster, open this URL in your browser to
-see the raw data the server received and how it was parsed:
+parses them defensively. It treats **Watching / Streaming / Transcoding** entries as
+live viewers (ignoring **Recording** and background jobs like library scans), strips
+client IPs and `(Remux…)` notes, pulls the device from the `from`/`to` clause, and
+falls back to the channel number when a stream carries no program name. Posters come
+from the current airing's title + image via `/devices/<id>/guide/now`.
+
+> Each viewer is one `…-stream-…` entry in the DVR's `activity` map. If a remote user
+> streams through a **different** Channels DVR server, add that server as its own
+> instance so its viewers appear too.
+
+If a live stream shows up with an odd title, the wrong device, or a missing poster,
+open this URL in your browser to see the raw data the server received and how it was
+parsed:
 
 ```
 http://localhost:<port>/api/debug?i=<instance-id>
