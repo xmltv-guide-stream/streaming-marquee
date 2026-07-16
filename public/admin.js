@@ -83,15 +83,33 @@ function renderRows(instances) {
   const typeLabel = (t) => (t === 'jellystat' ? 'Jellystat' : t === 'channels' ? 'Channels DVR' : 'Tautulli');
   tbody.innerHTML = instances.map((i) => `
     <tr data-id="${esc(i.id)}">
-      <td>${esc(i.name)}<br><span style="font-size:0.72rem;color:#8b98aa;text-transform:uppercase;letter-spacing:0.06em;">${esc(typeLabel(i.type))}</span></td>
+      <td><span class="nametext">${esc(i.name)}</span><br><span style="font-size:0.72rem;color:#8b98aa;text-transform:uppercase;letter-spacing:0.06em;">${esc(typeLabel(i.type))}</span></td>
       <td>${esc((i.https ? 'https://' : 'http://') + i.host + ':' + i.port)}</td>
       <td class="key">${esc(i.apiKeyMasked)}</td>
       <td style="text-align:right; white-space:nowrap;">
         <span class="status"></span>
+        <button class="ghost small rename">Rename</button>
         <button class="ghost small test">Test</button>
         <button class="danger small del">Remove</button>
       </td>
     </tr>`).join('');
+
+  tbody.querySelectorAll('.rename').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const tr = btn.closest('tr');
+      const id = tr.dataset.id;
+      const current = tr.querySelector('.nametext')?.textContent || '';
+      const name = prompt('New name for this instance:', current);
+      if (name === null) return;            // cancelled
+      if (!name.trim()) return alert('Name cannot be empty.');
+      const r = await (await fetch('/api/instances/' + encodeURIComponent(id), {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim() })
+      })).json();
+      if (r.ok) loadConfig();
+      else alert(r.error || 'Rename failed.');
+    });
+  });
 
   tbody.querySelectorAll('.del').forEach((btn) => {
     btn.addEventListener('click', async () => {

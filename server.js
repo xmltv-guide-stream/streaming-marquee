@@ -388,26 +388,39 @@ async function getChannelsGuide(inst) {
 //   "Watching ch4.1 NBC from Living Room"
 //   "<Client> is watching ch6 ABC"
 //
-// We: keep only "watching" entries, strip any prefix up to "watching", cut the
-// trailing "key=value" telemetry, split off the "from <device>" client name, and
-// peel a leading "chNN" channel number off the program title.
+// Different session types use different verbs — a live viewer may show as
+// "Watching …", "Streaming … to <client>", or "Transcoding …". We treat all of
+// those as active viewing, but skip DVR "Recording …" entries. We then strip the
+// verb prefix, cut the "key=value" telemetry, split off the "from/to <client>"
+// name, and peel a leading "chNN" channel number off the program title.
+const VIEW_VERB = /\b(watching|streaming|transcoding)\b/i;
+
 function parseChannelsActivity(inst, key, value) {
   if (typeof value !== 'string') return null;
-  if (!/watching/i.test(value)) return null;
+  if (/\brecording\b/i.test(value)) return null;   // DVR recording, not a viewer
+  if (!VIEW_VERB.test(value)) return null;
 
-  // Everything after the word "watching".
-  let s = value.replace(/^.*?\bwatching\s+/i, '').trim();
+  // Detect remux/transcode before we strip the descriptive bits away.
+  let transcodeDecision = '';
+  if (/transcod/i.test(value)) transcodeDecision = 'transcode';
+  else if (/remux/i.test(value)) transcodeDecision = 'copy'; // direct stream
+
+  // Everything after the viewing verb.
+  let s = value.replace(/^.*?\b(?:watching|streaming|transcoding)\s+/i, '').trim();
 
   // Drop trailing streaming diagnostics: cut from the first "word=value" token
   // (and any leading colon) to the end. e.g. ": buf=0% drop=0% timeouts=2".
   s = s.replace(/\s*:?\s*\b[\w-]+=\S+.*$/, '').trim();
 
-  // Pull out the client/location after "from".
+  // Remove parenthetical notes: client IP, "(Remux Starting: … @ 1.01x)", etc.
+  s = s.replace(/\([^)]*\)/g, ' ').replace(/\s{2,}/g, ' ').replace(/[\s:–-]+$/, '').trim();
+
+  // Pull out the client/location after "from" or "to".
   let device = '';
-  const fromMatch = s.match(/^(.*?)\s+from\s+(.+)$/i);
-  if (fromMatch) {
-    s = fromMatch[1].trim();
-    device = fromMatch[2].trim();
+  const clientMatch = s.match(/^(.*?)\s+(?:from|to)\s+(.+)$/i);
+  if (clientMatch) {
+    s = clientMatch[1].trim();
+    device = clientMatch[2].trim();
   }
 
   // Peel a leading channel token: "ch3", "ch4.1", "channel 12".
@@ -415,11 +428,23 @@ function parseChannelsActivity(inst, key, value) {
   const chMatch = s.match(/^ch(?:annel)?\s*([0-9]+(?:\.[0-9]+)?)\b\s*(.*)$/i);
   if (chMatch) {
     channelNo = chMatch[1];
-    if (chMatch[2].trim()) s = chMatch[2].trim();
+    s = chMatch[2].trim();
   }
 
-  const title = s || value;
-  const subtitle = channelNo ? `Ch ${channelNo} · Live TV` : 'Live TV';
+  // Some streams carry no program name (just "ch4"); fall back to the channel
+  // number and let guide enrichment fill in the real program if available.
+  const program = s.trim();
+  let title, subtitle;
+  if (program) {
+    title = program;
+    subtitle = channelNo ? `Ch ${channelNo} · Live TV` : 'Live TV';
+  } else if (channelNo) {
+    title = `Ch ${channelNo}`;
+    subtitle = 'Live TV';
+  } else {
+    title = value;
+    subtitle = 'Live TV';
+  }
 
   return {
     id: `${inst.id}:ch:${key}`,
@@ -437,7 +462,7 @@ function parseChannelsActivity(inst, key, value) {
     endTime: null,
     player: device || '',
     product: '',
-    transcodeDecision: '',
+    transcodeDecision,
     quality: '',
     channelNo,
     live: true,
@@ -619,7 +644,8 @@ function serveStatic(res, relPath) {
 function maskKey(key) {
   if (!key) return '';
   if (key.length <= 6) return '•'.repeat(key.length);
-  return key.slice(0, 3) + '•'.repeat(Math.max(4, key.length - 6)) + key.slice(-3);
+  // Fixed-length mask so long API keys don't stretch the admin table.
+  return key.slice(0, 3) + '••••••' + key.slice(-3);
 }
 
 function publicInstances() {
@@ -844,6 +870,7 @@ async function handleApi(req, res, urlObj) {
   const isProtected =
     (req.method === 'POST' && (p === '/api/instances' || p === '/api/test')) ||
     (req.method === 'DELETE' && /^\/api\/instances\/[^/]+$/.test(p)) ||
+    (req.method === 'PATCH' && /^\/api\/instances\/[^/]+$/.test(p)) ||
     (req.method === 'POST' && /^\/api\/instances\/[^/]+\/test$/.test(p)) ||
     (req.method === 'GET' && p === '/api/debug');
   if (isProtected && !isAuthed(req)) {
@@ -949,6 +976,20 @@ async function handleApi(req, res, urlObj) {
     config.instances.push(inst);
     saveConfig(config);
     return sendJson(res, 200, { ok: true, instance: { ...inst, apiKey: undefined, apiKeyMasked: maskKey(apiKey) } });
+  }
+
+  // /api/instances/:id  (PATCH) — rename (and optionally other fields)
+  const patchMatch = p.match(/^\/api\/instances\/([^/]+)$/);
+  if (patchMatch && req.method === 'PATCH') {
+    const inst = config.instances.find((i) => i.id === patchMatch[1]);
+    if (!inst) return sendJson(res, 404, { ok: false, error: 'Not found' });
+    const body = JSON.parse((await readBody(req)) || '{}');
+    if (typeof body.name === 'string' && body.name.trim()) {
+      inst.name = body.name.trim();
+      saveConfig(config);
+      return sendJson(res, 200, { ok: true });
+    }
+    return sendJson(res, 400, { ok: false, error: 'A non-empty name is required.' });
   }
 
   // /api/instances/:id  (DELETE)

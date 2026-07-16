@@ -70,7 +70,9 @@
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #283140; font-size: 0.92rem; }
     th { color: #8b98aa; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; }
-    td.key { font-family: ui-monospace, monospace; color: #9aa7b8; }
+    td.key { font-family: ui-monospace, monospace; color: #9aa7b8; word-break: break-all; max-width: 180px; }
+    table { table-layout: auto; }
+    td:last-child { white-space: nowrap; width: 1%; }
     .empty-row td { color: #7d8a9c; font-style: italic; }
     .status { font-size: 0.85rem; }
 
